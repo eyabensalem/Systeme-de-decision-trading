@@ -1,7 +1,6 @@
-projet-trading-gbpusd/
+SYSTEM-DE-DECISION-TRADING/
 │
 ├─ README.md
-├─ README_person1.md
 ├─ requirements.txt
 ├─ .gitignore
 ├─ Dockerfile
