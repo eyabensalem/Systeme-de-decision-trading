@@ -1,0 +1,9 @@
+{
+  "final_equity": 3.319097653400658,
+  "max_drawdown": -0.009561226163544267,
+  "sharpe": 22.717333910201216,
+  "profit_factor": 1.6092690873252167,
+  "n_trades": 7511,
+  "model": "PPO",
+  "transaction_cost": 5e-05
+}
