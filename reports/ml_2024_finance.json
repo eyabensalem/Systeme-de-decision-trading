@@ -1,0 +1,10 @@
+{
+  "final_equity": 0.5761236692447611,
+  "max_drawdown": -0.42578641930173877,
+  "sharpe": -13.042518477937595,
+  "profit_factor": 0.6824594248518654,
+  "n_trades": 11238,
+  "transaction_cost": 5e-05,
+  "threshold_long": 0.55,
+  "threshold_short": 0.45
+}
