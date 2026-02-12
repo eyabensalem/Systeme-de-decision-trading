@@ -10,8 +10,5 @@ data/raw/
 *.csv
 *.parquet
 
-# Jupyter
-.ipynb_checkpoints/
-
 # OS
 .DS_Store

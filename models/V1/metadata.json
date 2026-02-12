@@ -1,0 +1,33 @@
+{
+  "features": [
+    "open_15m",
+    "high_15m",
+    "low_15m",
+    "close_15m",
+    "volume_15m",
+    "ret",
+    "return_1",
+    "return_4",
+    "ema_20",
+    "ema_50",
+    "ema_diff",
+    "rsi_14",
+    "rolling_std_20",
+    "range_15m",
+    "body",
+    "upper_wick",
+    "lower_wick",
+    "ema_200",
+    "distance_to_ema200",
+    "slope_ema50",
+    "atr_14",
+    "rolling_std_100",
+    "volatility_ratio",
+    "adx_14",
+    "macd",
+    "macd_signal"
+  ],
+  "val_accuracy": 0.5105506948018528,
+  "val_f1": 0.39965566714490675,
+  "n_features": 26
+}
