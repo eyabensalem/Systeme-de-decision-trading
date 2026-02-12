@@ -9,7 +9,8 @@ __pycache__/
 data/raw/
 *.csv
 *.parquet
-
+data/processed/
+*.parquet
 # Jupyter
 .ipynb_checkpoints/
 

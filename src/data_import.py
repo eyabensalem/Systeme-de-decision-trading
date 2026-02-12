@@ -1,27 +1,22 @@
 import pandas as pd
 
 def load_m1_csv(path: str) -> pd.DataFrame:
-    df = pd.read_csv(path)
+    df = pd.read_csv(
+        path,
+        header=None,
+        names=["date","time","open","high","low","close","volume"]
+    )
 
-    # Vérifier colonnes
-    required_cols = ["date", "time", "open", "high", "low", "close"]
-    for col in required_cols:
-        if col not in df.columns:
-            raise ValueError(f"Colonne manquante : {col}")
-
-    # Fusion date + time
     df["timestamp"] = pd.to_datetime(
         df["date"].astype(str) + " " + df["time"].astype(str),
+        format="%Y.%m.%d %H:%M",
         errors="coerce"
     )
 
-    df = df.dropna(subset=["timestamp"])
-    df = df.sort_values("timestamp").reset_index(drop=True)
+    df = df.dropna(subset=["timestamp"]).sort_values("timestamp").reset_index(drop=True)
 
-    # Convertir prix en numérique
-    for col in ["open", "high", "low", "close"]:
-        df[col] = pd.to_numeric(df[col], errors="coerce")
+    for c in ["open","high","low","close","volume"]:
+        df[c] = pd.to_numeric(df[c], errors="coerce")
 
-    df = df.dropna(subset=["open", "high", "low", "close"])
-
+    df = df.dropna(subset=["open","high","low","close"]).reset_index(drop=True)
     return df
