@@ -1,0 +1,5 @@
+{
+  "selected_strategy": "RL_PPO",
+  "type": "rl",
+  "dir": "models/rl_v1"
+}
