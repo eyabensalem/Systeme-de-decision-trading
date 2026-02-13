@@ -3,12 +3,16 @@ import streamlit as st
 
 st.set_page_config(page_title="GBPUSD Decision", layout="centered")
 
-API_URL = "http://api:8000"
+#For docker 
+api_url = "http://api:8000"
+
+# ✅ Variable correcte
+API_URL = "http://127.0.0.1:8000"
 
 st.title("📈 GBPUSD Trading Decision")
 st.write(
-    "L’app récupère automatiquement la dernière bougie (features) et affiche la décision "
-    "**LONG / SHORT / FLAT**."
+    "L’app récupère automatiquement la dernière bougie (features) "
+    "et affiche la décision **LONG / SHORT / FLAT**."
 )
 
 def get_json(url: str):
@@ -16,6 +20,7 @@ def get_json(url: str):
     r.raise_for_status()
     return r.json()
 
+# ✅ Test connexion API
 try:
     health = get_json(f"{API_URL}/health")
     st.success("✅ API connectée")
@@ -25,7 +30,7 @@ except Exception as e:
 
 st.divider()
 
-# (Optionnel) infos modèle — si tu veux vraiment zéro technique, tu peux supprimer ce bloc
+# Infos modèle (optionnel)
 try:
     info = get_json(f"{API_URL}/model_version")
     c1, c2 = st.columns(2)
@@ -37,6 +42,7 @@ except Exception:
 st.divider()
 
 st.subheader("🚀 Décision")
+
 if st.button("Get latest decision"):
     try:
         res = get_json(f"{API_URL}/decision/latest")
@@ -48,15 +54,15 @@ if st.button("Get latest decision"):
         if action == "LONG":
             st.success("✅ Décision: **LONG** (acheter)")
         elif action == "SHORT":
-            st.error("✅ Décision: **SHORT** (vendre)")
+            st.error("📉 Décision: **SHORT** (vendre)")
         else:
-            st.info("✅ Décision: **FLAT** (ne rien faire)")
+            st.info("⏸ Décision: **FLAT** (ne rien faire)")
 
         st.caption(f"Timestamp: {ts}")
+
         if price is not None:
             st.caption(f"Price (close_15m): {price}")
 
-        # score facultatif (utile ML, souvent null en RL)
         if res.get("score") is not None:
             st.caption(f"Score: {res['score']}")
 
@@ -64,9 +70,11 @@ if st.button("Get latest decision"):
         st.error(f"Erreur: {e}")
 
 st.divider()
+
 st.markdown(
-    """
-**Que veulent dire les décisions ?**
+"""
+### 📖 Que veulent dire les décisions ?
+
 - **LONG** : prendre une position acheteuse (profite si le prix monte)
 - **SHORT** : prendre une position vendeuse (profite si le prix baisse)
 - **FLAT** : rester neutre (pas de position)
