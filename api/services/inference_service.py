@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 from src.strategies.ml_infer import load_model as load_ml_model, predict_proba_up
-
+from api.services.feature_service import FeatureService
 
 try:
     from stable_baselines3 import PPO
@@ -28,15 +28,12 @@ class InferenceService:
 
         active_path = self.root / "models" / "active_model.json"
         if not active_path.exists():
-            raise FileNotFoundError(
-                "models/active_model.json not found. Run scripts/set_active_model.py"
-            )
+            raise FileNotFoundError("models/active_model.json not found. Run scripts/set_active_model.py")
 
         self.active = json.loads(active_path.read_text(encoding="utf-8"))
         self.model_type = self.active["type"]
 
         if self.model_type == "ml":
-            # robuste à V1 vs v1
             self.model_dir = _existing_dir(self.root, ["models/V1", "models/v1"])
             self.model, self.meta = load_ml_model(self.model_dir)
             self.features = self.meta["features"]
@@ -49,7 +46,6 @@ class InferenceService:
             self.meta = json.loads((self.model_dir / "metadata.json").read_text(encoding="utf-8"))
             self.features = self.meta["features"]
 
-            # robuste à ppo_model.zip
             zip_path = self.model_dir / "ppo_model.zip"
             base_path = self.model_dir / "ppo_model"
             self.model = PPO.load(zip_path if zip_path.exists() else base_path)
@@ -57,12 +53,13 @@ class InferenceService:
         else:
             raise ValueError(f"Unknown model type: {self.model_type}")
 
+    # -------------------------
+    # predict from provided features (debug / legacy)
+    # -------------------------
     def predict(self, features_dict: dict) -> tuple[str, float | None]:
-        # 1 ligne, ordre exact des features du modèle
         row = {f: float(features_dict.get(f, 0.0)) for f in self.features}
         df = pd.DataFrame([row])
 
-        # ----- ML
         if self.model_type == "ml":
             proba = float(predict_proba_up(df, self.model, self.features).iloc[0])
             if proba > 0.55:
@@ -71,9 +68,8 @@ class InferenceService:
                 return "short", proba
             return "flat", proba
 
-        # ----- RL (PPO)
+        # RL (PPO): action 0/1/2
         action, _ = self.model.predict(df.values.astype(np.float32), deterministic=True)
-
         if isinstance(action, (np.ndarray, list)):
             action = int(action[0])
         else:
@@ -84,3 +80,27 @@ class InferenceService:
         if action == 2:
             return "long", None
         return "flat", None
+
+    # -------------------------
+    # production mode: build features automatically
+    # -------------------------
+    def predict_from_features(self, features_dict: dict) -> tuple[str, float | None]:
+        return self.predict(features_dict)
+
+    def predict_latest(self) -> dict:
+        fs = FeatureService(self.root)  # lit data/processed/m15_2024_features.parquet
+        row = fs.get_latest_row()
+
+        features_dict = fs.row_to_feature_dict(row, self.features)
+        action, score = self.predict_from_features(features_dict)
+
+        ts = str(row.get("timestamp", "unknown"))
+        price = float(row.get("close_15m", 0.0)) if "close_15m" in row.index else None
+
+        return {
+            "timestamp": ts,
+            "price": price,
+            "action": action,
+            "score": score,
+            "model_type": self.model_type
+        }
