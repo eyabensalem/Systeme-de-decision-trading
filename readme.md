@@ -51,7 +51,6 @@ adx_14          # Average Directional Index
 | **2023** | Validation | Validation et tuning |
 | **2024** | Test final | Évaluation finale |
 
-⚠️ **Aucune fuite temporelle** entre les ensembles.
 
 ---
 
@@ -66,14 +65,78 @@ adx_14          # Average Directional Index
 
 ### 3.2 Machine Learning
 
-**Modèle supervisé** (classification directionnelle)
+Modèles supervisés de **classification directionnelle** visant à prédire le signe du rendement futur (hausse ou baisse).
 
+**Objectif:**
+Prédire si la prochaine bougie M15 aura un rendement positif ou négatif.
+
+# 🧪 Modèles Testés
+
+Deux modèles de Machine Learning ont été évalués pour la prédiction de la direction du marché GBP/USD.
+
+---
+
+## 📊 Logistic Regression
+
+**Caractéristiques :**
+
+- 🔹 Modèle linéaire probabiliste
+- 🔹 Interprétable et transparent
+- 🔹 Sert de baseline ML
+- 🔹 Sensible aux relations linéaires entre features
+
+**Avantages :**
+- Rapidité d'entraînement
+- Faible risque d'overfitting
+- Coefficients facilement interprétables
+
+**Limites :**
+- Assume des relations linéaires
+- Performance limitée sur données complexes
+
+---
+
+## 🌲 Random Forest
+
+**Caractéristiques :**
+
+- 🔹 Modèle d'ensemble (arbres de décision)
+- 🔹 Capture les non-linéarités
+- 🔹 Robuste aux interactions complexes entre features
+- 🔹 Meilleure capacité de généralisation
+
+**Avantages :**
+- Gère naturellement les interactions entre variables
+- Résistant aux outliers
+- Pas besoin de scaling des features
+- Feature importance intégrée
+
+**Limites :**
+- Plus long à entraîner
+- Moins interprétable que la régression logistique
+- Risque d'overfitting si mal configuré
+
+---
 - **Type** : Classification binaire
 - **Sortie** : Probabilité de hausse
 - **Règles de décision** :
   - P(hausse) ≥ 0.55 → **LONG**
   - P(hausse) < 0.45 → **SHORT**
   - Sinon → **FLAT**
+
+
+---
+
+## 📈 Résultats Comparatifs (2023 - Validation)
+
+| Modèle | Accuracy | Sharpe | Max DD | Profit Factor |
+|--------|----------|--------|--------|---------------|
+| **Logistic Regression** | TBD | TBD | TBD | TBD |
+| **Random Forest** | TBD | TBD | TBD | TBD |
+
+> ⚠️ **Note** : Après validation sur 2023, le meilleur modèle a été sélectionné pour le test final 2024.
+
+---
 
 **Modèle sauvegardé dans :**
 ```
@@ -431,8 +494,6 @@ docker compose logs -f
 # Rebuild sans cache
 docker compose build --no-cache
 
-# Redémarrer un service spécifique
-docker compose restart api
 ```
 
 ---
@@ -444,32 +505,7 @@ docker compose restart api
 - ✅ **Chemins locaux non exposés** : Tous les chemins sensibles sont en variables d'environnement
 - ✅ **Modèle actif sélectionné** via `active_model.json`
 - ✅ **Pas de retrain via API** : Training offline uniquement pour éviter les abus
-- ✅ **Validation des inputs** : Pydantic schemas pour toutes les entrées
-- ✅ **Rate limiting** : Protection contre les abus d'API
-- ✅ **CORS configuré** : Sécurité cross-origin
 
-### Variables d'environnement
-
-```bash
-# .env.example
-MODEL_PATH=./models
-DATA_PATH=./data
-LOG_LEVEL=INFO
-API_HOST=0.0.0.0
-API_PORT=8000
-```
-
-### Déploiement en production
-
-**Recommandations :**
-
-1. Utiliser un reverse proxy (Nginx)
-2. Activer HTTPS avec Let's Encrypt
-3. Implémenter l'authentification (JWT tokens)
-4. Configurer le monitoring (Prometheus + Grafana)
-5. Mettre en place des backups automatiques des modèles
-
----
 
 ## 📊 Métriques de Performance
 
@@ -477,21 +513,21 @@ API_PORT=8000
 
 | Métrique | Valeur |
 |----------|--------|
-| Accuracy | TBD |
-| Precision | TBD |
-| Recall | TBD |
-| Sharpe Ratio | TBD |
-| Max Drawdown | TBD |
+| Accuracy | *** |
+| Precision | *** |
+| Recall | *** |
+| Sharpe Ratio | *** |
+| Max Drawdown | *** |
 
 ### RL Model (2024)
 
 | Métrique | Valeur |
 |----------|--------|
-| Final Equity | **3.319x** |
-| Max Drawdown | **-0.95%** |
-| Sharpe Ratio | **22.71** |
-| Profit Factor | **1.60** |
-| Number of Trades | **7,511** |
+| Final Equity | *** |
+| Max Drawdown | *** |
+| Sharpe Ratio | *** |
+| Profit Factor | *** |
+| Number of Trades | *** |
 
 ---
 
@@ -546,8 +582,8 @@ API_PORT=8000
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/gbpusd-trading-system.git
-cd gbpusd-trading-system
+git clone https://github.com/eyabensalem/Systeme-de-decision-trading.git
+cd Systeme-de-decision-trading
 
 # Docker deployment (fastest)
 docker compose up --build
@@ -559,4 +595,4 @@ docker compose up --build
 
 ---
 
-⭐ **Star this repo if you find it useful!**
+
