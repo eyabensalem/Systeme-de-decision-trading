@@ -1,14 +1,19 @@
 # Environnement virtuel
 venv/
 
+
 # Python
 __pycache__/
 *.pyc
 
 # Données
 data/raw/
+data/processed/
+reports/
 *.csv
 *.parquet
 
 # OS
 .DS_Store
+
+

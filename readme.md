@@ -1,120 +1,562 @@
-SYSTEM-DE-DECISION-TRADING/
-│
-├─ README.md
-├─ requirements.txt
-├─ .gitignore
-├─ Dockerfile
-│
-├─ data/
-│  ├─ raw/                      # CSV M1 (IGNORÉ git)
-│  └─ processed/                # parquet features 2022/2023/2024 (IGNORÉ git)
-│     ├─ m15_2022_features.parquet
-│     ├─ m15_2023_features.parquet
-│     └─ m15_2024_features.parquet
-│
-├─ reports/
-│  ├─ person1_summary.md         # QC + mini EDA (Personne 1)
-│  ├─ price_evolution_2022.png
-│  └─ returns_hist_2022.png
-│
-├─ src/
-│  ├─ __init__.py
-│  │
-│  ├─ data_import.py             # import M1 + timestamp
-│  ├─ m15_agg.py                 # M1 → M15 OHLCV
-│  ├─ clean_m15.py               # cleaning + checks
-│  ├─ features.py                # add_features()
-│  │
-│  ├─ strategies/
-│  │  ├─ __init__.py
-│  │  ├─ backtest.py             # moteur backtest + coûts
-│  │  ├─ metrics.py              # sharpe, maxDD, profit factor…
-│  │  ├─ baselines.py            # baselines (always long, random, règle EMA/RSI…)
-│  │  ├─ ml_train.py             # train modèle + save joblib
-│  │  ├─ ml_infer.py             # load modèle + predict
-│  │  ├─ rl_env.py               # env gym (option)
-│  │  └─ rl_train.py             # train RL (option)
-│  │
-│  └─ evaluation/
-│     ├─ __init__.py
-│     ├─ eval_pipeline.py        # comparaison finale sur 2024
-│     └─ plots.py                # courbes equity/metrics
-│
-├─ api/
-│  ├─ main.py                    # FastAPI app
-│  ├─ routers/
-│  │  ├─ health.py
-│  │  ├─ predict.py              # POST /predict
-│  │  └─ model_info.py           # GET /model_version
-│  ├─ services/
-│  │  ├─ inference_service.py
-│  │  └─ feature_service.py
-│  └─ schemas/
-│     ├─ request.py
-│     └─ response.py
-│
-├─ models/                       # (souvent ignoré si lourd, sinon versionné)
-│  └─ v1/
-│     ├─ model.joblib
-│     └─ metadata.json
-│
-└─ scripts/
-   ├─ run_build_features_all_years.py
-   ├─ run_baselines_2024.py
-   ├─ run_train_ml.py
-   ├─ run_eval_2024.py
-   └─ run_eda.py
+# 📈 GBP/USD Trading Decision System
 
-# Partie RL : 
+Machine Learning & Reinforcement Learning based decision system for GBP/USD (M15 timeframe), with FastAPI backend, Streamlit frontend, and Docker deployment.
 
-# Reinforcement Learning Design (GBPUSD M15)
+## 🎯 1. Objectif du projet
 
-## 1) Business problem
-Goal: learn a trading policy on M15 candles to maximize risk-adjusted performance.
-Constraints: transaction costs, no lookahead, strict temporal splits.
-Horizon: M15, episode = one year (or fixed window).
+Développer un système complet de prise de décision de trading sur **GBP/USD (M15)** incluant :
 
-## 2) Data
-Input: feature-ready M15 dataset (2022/2023/2024 parquet).
-Alignment: action at time t is applied to return t->t+1 (shifted position).
-Costs: transaction_cost applied when position changes.
+- ✅ Feature engineering avancé
+- ✅ Baselines classiques
+- ✅ Modèle Machine Learning supervisé
+- ✅ Modèle Reinforcement Learning (PPO)
+- ✅ Backtesting réaliste avec coûts de transaction
+- ✅ API REST (FastAPI)
+- ✅ Interface utilisateur (Streamlit)
+- ✅ Dockerisation
 
-## 3) State (observation)
-Observation = vector of numeric features at time t (e.g., returns, EMA, RSI, ATR, MACD, ADX, candle features).
-Normalization: standardize using train statistics (mean/std).
-Warm-up: initial rows removed by feature engineering already (EMA200, etc.).
+---
 
-## 4) Action
-Discrete actions A = {-1, 0, +1} corresponding to short/flat/long.
+## 📊 2. Données
 
-## 5) Reward
-Reward(t) = log-return(t+1) * position(t) - transaction_cost * |position(t) - position(t-1)|
-Optionally risk penalty: reward -= lambda * (drawdown_increment or volatility).
+### Source et traitement
 
-## 6) Environment
-Simulator iterates sequentially over time.
-Includes: costs, no slippage (or optional slippage), terminal at end of episode.
+- **Source** : GBP/USD M1
+- **Agrégation** : M15 OHLCV
+- **Features techniques** : 26 features
 
-## 7) Algorithm choice + justification
-Chosen: PPO (stable for discrete actions, works with continuous observation vectors, good default baseline).
-Alternative: DQN (works but can be less stable with noisy rewards).
+### Features principales
 
-## 8) Key hyperparameters
-- gamma: 0.99
-- learning_rate: 3e-4
-- n_steps: 2048
-- batch_size: 64
-- ent_coef: 0.0–0.01
-- seed: 42
+```python
+# Rendements
+return_1
 
-## 9) Evaluation protocol
-Strict temporal split:
-- Train: 2022
-- Validation: 2023 (optional tuning)
-- Test: 2024 (final, never used in training)
-Metrics:
-- Profit cumulé (final equity)
-- Max drawdown
-- Sharpe
-- Profit factor
-Stress tests: transaction_cost sensitivity, threshold changes, regime changes.
+# Moyennes mobiles
+ema_20, ema_50
+
+# Indicateurs techniques
+rsi_14          # Relative Strength Index
+atr_14          # Average True Range
+macd            # MACD
+macd_signal     # MACD Signal Line
+adx_14          # Average Directional Index
+# ... autres indicateurs techniques
+```
+
+### Split temporel strict
+
+| Période | Usage | Description |
+|---------|-------|-------------|
+| **2022** | Train | Entraînement des modèles |
+| **2023** | Validation | Validation et tuning |
+| **2024** | Test final | Évaluation finale |
+
+⚠️ **Aucune fuite temporelle** entre les ensembles.
+
+---
+
+## 🧠 3. Stratégies Implémentées
+
+### 3.1 Baselines
+
+- **Always Long** : Position longue permanente
+- **Always Flat** : Aucune position
+- **Random** : Positions aléatoires
+- **EMA/RSI Rule** : Règles techniques simples
+
+### 3.2 Machine Learning
+
+**Modèle supervisé** (classification directionnelle)
+
+- **Type** : Classification binaire
+- **Sortie** : Probabilité de hausse
+- **Règles de décision** :
+  - P(hausse) ≥ 0.55 → **LONG**
+  - P(hausse) < 0.45 → **SHORT**
+  - Sinon → **FLAT**
+
+**Modèle sauvegardé dans :**
+```
+models/V1/
+```
+
+### 3.3 Reinforcement Learning (PPO)
+
+**Configuration :**
+
+- **Actions** : {-1, 0, +1} (SHORT, FLAT, LONG)
+- **Reward function** :
+
+```
+r_t = log_return_{t+1} × position_t - cost × |Δposition|
+```
+
+- **Algorithme** : Proximal Policy Optimization (PPO)
+- **Environnement** : Custom gym environment
+
+**Modèle sauvegardé dans :**
+```
+models/rl_v1/
+```
+
+---
+
+## 📈 4. Résultats 2024 (Test Final)
+
+### 🔹 RL (PPO)
+
+```json
+{
+  "final_equity": 3.319,
+  "max_drawdown": -0.0095,
+  "sharpe": 22.71,
+  "profit_factor": 1.60,
+  "n_trades": 7511
+}
+```
+
+**Interprétation :**
+
+- 🔵 Capital multiplié par **~3.3**
+- 🔵 Drawdown très faible (**~0.95%**)
+- 🔵 Sharpe très élevé (**22.71**)
+- 🔵 Profit factor > 1 (stratégie profitable)
+- 🔵 Trading actif (**7511 trades**)
+
+### 🔹 ML (2024)
+
+**Fichiers générés :**
+
+```
+reports/ml_2024_stats.json
+reports/ml_2024_finance.json
+```
+
+**Métriques disponibles :**
+
+- Accuracy
+- Precision / Recall
+- Sharpe Ratio
+- Max Drawdown
+- Profit Factor
+
+### 🔹 Comparaison Finale
+
+**Fichier généré :**
+
+```
+reports/final_comparison_2024.csv
+```
+
+**Comparaison entre :**
+
+- Baselines
+- Machine Learning
+- Reinforcement Learning
+
+---
+
+## 🖥 5. Architecture du Projet
+
+```
+┌─────────────────────┐
+│   Streamlit UI      │
+│   (Port 8501)       │
+└──────────┬──────────┘
+           │
+           ▼
+┌─────────────────────┐
+│   FastAPI Backend   │
+│   (Port 8000)       │
+└──────────┬──────────┘
+           │
+           ▼
+┌─────────────────────┐
+│   ML / RL Models    │
+│   (models/)         │
+└──────────┬──────────┘
+           │
+           ▼
+┌─────────────────────┐
+│  Parquet Features   │
+│  (data/)            │
+└─────────────────────┘
+```
+
+### Structure des fichiers
+
+```
+                    ┌───────────────────────────────────────────┐
+                    │        SYSTEME-DE-DECISION-TRADING         │
+                    └───────────────────────────────────────────┘
+
+ ┌──────────────────────────┐
+ │        DATA LAYER         │
+ └──────────────────────────┘
+   data/raw/ (M1 CSV)                 data/processed/ (PARQUET features)
+           │                                  ├─ m15_2022_features.parquet
+           │                                  ├─ m15_2023_features.parquet
+           │                                  └─ m15_2024_features.parquet
+           │
+           ▼
+ ┌──────────────────────────┐
+ │      FEATURE ENGINEERING  │
+ └──────────────────────────┘
+   src/data_import.py   src/m15_agg.py   src/clean_m15.py   src/features.py
+                           │
+                           ▼
+ ┌──────────────────────────────────────────────────────────────┐
+ │                   STRATEGIES + BACKTEST CORE                 │
+ └──────────────────────────────────────────────────────────────┘
+   src/strategies/
+     ├─ baselines.py       → always_long / always_flat / random / ema_rsi_rule
+     ├─ ml_train.py        → train ML (2022) + validate (2023) + save models/V1
+     ├─ ml_infer.py        → load ML + predict
+     ├─ rl_env.py          → Gym env (state=features, action=-1/0/+1, reward)
+     ├─ rl_train.py        → train PPO RL (2022) + save models/rl_v1
+     ├─ backtest.py        → backtest engine + transaction cost
+     └─ metrics.py         → Sharpe / MaxDD / ProfitFactor / etc.
+
+                           │
+                           ▼
+ ┌──────────────────────────┐
+ │    EVALUATION & REPORTS   │
+ └──────────────────────────┘
+   src/evaluation/ (eval_pipeline.py, plots.py)
+   scripts/ (run_*.py)
+     ├─ run_baselines_2024.py
+     ├─ run_train_ml.py / run_eval_2024.py
+     ├─ run_train_rl.py / run_eval_rl_2024.py
+     ├─ run_plot_equity_2024_all.py
+     └─ run_final_comparison_2024.py
+           │
+           ▼
+   reports/
+     ├─ baselines_2024.csv
+     ├─ ml_2024_stats.json / ml_2024_finance.json
+     ├─ rl_2024_finance.json
+     ├─ equity_2024_baselines_vs_ml_vs_rl.png
+     └─ final_comparison_2024.csv
+
+                           │
+                           ▼
+ ┌──────────────────────────────────────────────────────────────┐
+ │                      MODEL ARTIFACTS                         │
+ └──────────────────────────────────────────────────────────────┘
+   models/
+     ├─ V1/ (ML)      → model.joblib + metadata.json
+     ├─ rl_v1/ (RL)   → ppo_model.zip + metadata.json
+     └─ active_model.json   (choix du modèle servi par l'API)
+
+                           │
+                           ▼
+ ┌──────────────────────────────────────────────────────────────┐
+ │                    DEPLOYMENT (PRODUCTION)                   │
+ └──────────────────────────────────────────────────────────────┘
+
+   ┌───────────────────────────────┐        HTTP         ┌──────────────────────────┐
+   │  Streamlit UI (port 8501)     │  ───────────────▶   │   FastAPI API (port 8000)│
+   │  streamlit_app/app.py         │                     │   api/main.py            │
+   │  "Get latest decision"        │                     │   /decision/latest       │
+   └───────────────────────────────┘                     │   /predict (debug)       │
+                                                         │   /health, /model_version│
+                                                         └──────────────────────────┘
+                                                                      │
+                                                                      ▼
+                                                         Reads parquet + loads active model
+
+```
+
+---
+
+## 🚀 6. Exécution Complète du Projet
+
+### 6.1 Installation
+
+```bash
+# Créer l'environnement virtuel
+python -m venv venv
+
+# Activer l'environnement (Windows)
+.\venv\Scripts\Activate.ps1
+
+# Activer l'environnement (Mac/Linux)
+source venv/bin/activate
+
+# Installer les dépendances
+pip install -r requirements.txt
+```
+
+### 6.2 Génération des features
+
+```bash
+python -m scripts.run_build_features_all_years
+```
+
+### 6.3 Machine Learning
+
+```bash
+# Entraînement
+python -m scripts.run_train_ml
+
+# Évaluation 2024
+python -m scripts.run_eval_2024
+```
+
+### 6.4 Reinforcement Learning
+
+```bash
+# Entraînement
+python -m scripts.run_train_rl
+
+# Évaluation 2024
+python -m scripts.run_eval_rl_2024
+```
+
+### 6.5 Choisir le modèle actif
+
+```bash
+python .\scripts\set_active_model.py
+```
+
+---
+
+## 🌐 7. API (FastAPI)
+
+### Lancer l'API
+
+```bash
+uvicorn api.main:app --host 127.0.0.1 --port 8000
+```
+
+### Documentation Swagger
+
+```
+http://127.0.0.1:8000/docs
+```
+
+### Endpoints disponibles
+
+| Méthode | Endpoint | Description |
+|---------|----------|-------------|
+| `GET` | `/health` | Health check de l'API |
+| `GET` | `/model_version` | Version du modèle actif |
+| `GET` | `/decision/latest` | Dernière décision de trading |
+| `POST` | `/predict` | Prédiction sur nouvelles données |
+
+### Exemple d'utilisation
+
+```python
+import requests
+
+# Health check
+response = requests.get("http://127.0.0.1:8000/health")
+print(response.json())
+
+# Obtenir la dernière décision
+response = requests.get("http://127.0.0.1:8000/decision/latest")
+print(response.json())
+# {"decision": "LONG", "confidence": 0.67, "timestamp": "2024-01-15T10:30:00"}
+```
+
+---
+
+## 🎨 8. Interface Streamlit
+
+### Lancer l'interface
+
+```bash
+streamlit run streamlit_app/app.py
+```
+
+### Accès
+
+```
+http://localhost:8501
+```
+
+### Fonctionnalités
+
+- 📊 Bouton **"Get latest decision"**
+- 🎯 Affichage de la décision : **LONG** / **SHORT** / **FLAT**
+- 🔄 Mode production (features calculées automatiquement)
+- 📈 Visualisation des métriques de performance
+- 🕒 Historique des décisions
+
+---
+
+## 🐳 9. Dockerisation
+
+### Lancer avec Docker Compose
+
+```bash
+docker compose up --build
+```
+
+### Accès aux services
+
+| Service | URL | Description |
+|---------|-----|-------------|
+| **API** | http://localhost:8000 | FastAPI backend |
+| **Streamlit** | http://localhost:8501 | Interface utilisateur |
+
+### Architecture micro-services
+
+```yaml
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - MODEL_PATH=/app/models
+    
+  streamlit:
+    build: .
+    ports:
+      - "8501:8501"
+    depends_on:
+      - api
+```
+
+### Commandes Docker utiles
+
+```bash
+# Arrêter les services
+docker compose down
+
+# Voir les logs
+docker compose logs -f
+
+# Rebuild sans cache
+docker compose build --no-cache
+
+# Redémarrer un service spécifique
+docker compose restart api
+```
+
+---
+
+## 🔐 10. Sécurité & Production
+
+### Bonnes pratiques implémentées
+
+- ✅ **Chemins locaux non exposés** : Tous les chemins sensibles sont en variables d'environnement
+- ✅ **Modèle actif sélectionné** via `active_model.json`
+- ✅ **Pas de retrain via API** : Training offline uniquement pour éviter les abus
+- ✅ **Validation des inputs** : Pydantic schemas pour toutes les entrées
+- ✅ **Rate limiting** : Protection contre les abus d'API
+- ✅ **CORS configuré** : Sécurité cross-origin
+
+### Variables d'environnement
+
+```bash
+# .env.example
+MODEL_PATH=./models
+DATA_PATH=./data
+LOG_LEVEL=INFO
+API_HOST=0.0.0.0
+API_PORT=8000
+```
+
+### Déploiement en production
+
+**Recommandations :**
+
+1. Utiliser un reverse proxy (Nginx)
+2. Activer HTTPS avec Let's Encrypt
+3. Implémenter l'authentification (JWT tokens)
+4. Configurer le monitoring (Prometheus + Grafana)
+5. Mettre en place des backups automatiques des modèles
+
+---
+
+## 📊 Métriques de Performance
+
+### ML Model (2024)
+
+| Métrique | Valeur |
+|----------|--------|
+| Accuracy | TBD |
+| Precision | TBD |
+| Recall | TBD |
+| Sharpe Ratio | TBD |
+| Max Drawdown | TBD |
+
+### RL Model (2024)
+
+| Métrique | Valeur |
+|----------|--------|
+| Final Equity | **3.319x** |
+| Max Drawdown | **-0.95%** |
+| Sharpe Ratio | **22.71** |
+| Profit Factor | **1.60** |
+| Number of Trades | **7,511** |
+
+---
+
+## 🧩 Technologies
+
+### Backend
+- **FastAPI** — Modern Python web framework
+- **Pydantic** — Data validation
+- **Uvicorn** — ASGI server
+
+### Machine Learning
+- **Scikit-Learn** — ML algorithms
+- **Stable-Baselines3** — RL (PPO)
+- **Gymnasium** — RL environment
+
+### Data Processing
+- **Pandas** — Data manipulation
+- **NumPy** — Numerical computing
+- **Parquet** — Efficient data storage
+
+### Frontend
+- **Streamlit** — Interactive UI
+- **Plotly** — Visualizations
+
+### DevOps
+- **Docker** — Containerization
+- **Docker Compose** — Multi-container orchestration
+
+---
+
+## 🎓 Workflow Complet
+
+```
+1. Data Collection (M1 OHLCV)
+         ↓
+2. Feature Engineering (26 features)
+         ↓
+3. Train ML Model (2022)
+         ↓
+4. Train RL Model (PPO)
+         ↓
+5. Validate (2023)
+         ↓
+6. Test Final (2024)
+         ↓
+7. Deploy (Docker)
+         ↓
+8. Production (API + Streamlit)
+```
+
+## 🚀 Quick Start
+
+```bash
+# Clone the repository
+git clone https://github.com/your-username/gbpusd-trading-system.git
+cd gbpusd-trading-system
+
+# Docker deployment (fastest)
+docker compose up --build
+
+# Access services
+# API: http://localhost:8000/docs
+# UI: http://localhost:8501
+```
+
+---
+
+⭐ **Star this repo if you find it useful!**
