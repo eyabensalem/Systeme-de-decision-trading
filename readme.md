@@ -2,6 +2,16 @@
 
 Machine Learning & Reinforcement Learning based decision system for GBP/USD (M15 timeframe), with FastAPI backend, Streamlit frontend, and Docker deployment.
 
+## Team And Contribution
+
+This project was carried out by a team of two.
+
+My main contribution focused on:
+- modeling the trading decision system
+- training and evaluating the Machine Learning and Reinforcement Learning approaches
+- comparing ML and RL models based on predictive and financial performance
+- contributing to the analysis of the final model results
+
 
 ## 🎯 1. Objectif du projet
 
