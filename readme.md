@@ -2,6 +2,7 @@
 
 Machine Learning & Reinforcement Learning based decision system for GBP/USD (M15 timeframe), with FastAPI backend, Streamlit frontend, and Docker deployment.
 
+
 ## 🎯 1. Objectif du projet
 
 Développer un système complet de prise de décision de trading sur **GBP/USD (M15)** incluant :
@@ -592,7 +593,6 @@ docker compose up --build
 # API: http://localhost:8000/docs
 # UI: http://localhost:8501
 ```
+## App Interface
 
----
-
-
+![Trading app interface](trade_app.png)
