@@ -138,12 +138,10 @@ Deux modèles de Machine Learning ont été évalués pour la prédiction de la 
 
 ## 📈 Résultats Comparatifs (2023 - Validation)
 
-| Modèle | Accuracy | Sharpe | Max DD | Profit Factor |
-|--------|----------|--------|--------|---------------|
-| **Logistic Regression** | TBD | TBD | TBD | TBD |
-| **Random Forest** | TBD | TBD | TBD | TBD |
 
-> ⚠️ **Note** : Après validation sur 2023, le meilleur modèle a été sélectionné pour le test final 2024.
+> Après validation sur 2023, le modèle **Random Forest** a été retenu pour le test final 2024.
+> Le choix a été fait sur le **F1-score de validation (`val_f1`)**, critère utilisé dans le pipeline d'entraînement pour départager `logreg` et `rf`.
+> Le modèle sélectionné correspond à `model_name = "rf"` avec `val_f1 = 0.4530` et `val_accuracy = 0.5121`.
 
 ---
 
@@ -151,6 +149,13 @@ Deux modèles de Machine Learning ont été évalués pour la prédiction de la 
 ```
 models/V1/
 ```
+
+**Résumé de la sélection du modèle ML :**
+- Modèles comparés : `Logistic Regression` et `Random Forest`
+- Jeu de train : **2022**
+- Jeu de validation : **2023**
+- Critère de sélection : **meilleur F1-score sur la validation**
+- Modèle retenu : **Random Forest (`rf`)**
 
 ### 3.3 Reinforcement Learning (PPO)
 
