@@ -4,12 +4,7 @@ Machine Learning & Reinforcement Learning based decision system for GBP/USD (M15
 
 ## Team And Contribution
 
-This project was carried out by a team of two.
-
-Team members and contributions:
-- Yasmine: modelization of the trading decision system, training and evaluation of the Machine Learning and Reinforcement Learning approaches, and comparison of ML and RL models based on predictive and financial performance.
-- Eya: data preprocessing, preparation of the working dataset, and contribution to the data pipeline used by the project.
-
+This project was carried out by a team of two Yasmine and Eya.
 
 ## 🎯 1. Objectif du projet
 
