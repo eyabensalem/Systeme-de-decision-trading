@@ -2,9 +2,9 @@
 
 Machine Learning & Reinforcement Learning based decision system for GBP/USD (M15 timeframe), with FastAPI backend, Streamlit frontend, and Docker deployment.
 
-## Team And Contribution
+## Team
 
-This project was carried out by a team of two Yasmine and Eya.
+This project was carried out by a team of two **Yasmine** and **Eya**.
 
 ## 🎯 1. Objectif du projet
 
